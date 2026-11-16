@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JobStudent.sk – Brigády a stáže pre študentov</title>
+  <meta name="description" content="JobStudent.sk – brigády, čiastočné úväzky, stáže a prvé pracovné miesta pre vysokoškolských študentov.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Preskočiť na obsah</a>
+
+  <!-- ===== HLAVIČKA ===== -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="logo-text" href="#/" aria-label="JobStudent.sk – domov">Job<span>Student</span>.sk</a>
+
+      <button type="button" class="btn btn-outline nav-toggle" aria-expanded="false" aria-controls="mainNav">☰ Menu</button>
+
+      <nav id="mainNav" class="site-nav" aria-label="Hlavná navigácia">
+        <ul class="nav-links">
+          <li><a href="#/" data-route="jobs">Ponuky práce</a></li>
+          <li><a href="#/profile" data-route="profile">Môj profil</a></li>
+          <li><a href="#/profile/saved" data-route="saved">Uložené ponuky</a></li>
+        </ul>
+        <div class="nav-actions">
+          <a class="btn btn-outline" href="#/login" data-route="login">Prihlásiť sa</a>
+          <a class="btn btn-primary" href="#/register" data-route="register">Registrácia</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" tabindex="-1">
+    <noscript>
+      <div class="container"><p class="alert alert-error">Táto stránka vyžaduje zapnutý JavaScript.</p></div>
+    </noscript>
+
+    <!-- ===== STRANA 1: HĽADANIE PRÁCE ===== -->
+    <section id="page-jobs" class="page" aria-labelledby="jobsTitle">
+      <div class="hero">
+        <div class="container">
+          <h1 id="jobsTitle">Nájdite si brigádu alebo stáž popri štúdiu</h1>
+          <p>Brigády, čiastočné úväzky, stáže aj prvé pracovné miesta pre vysokoškolákov a mladých ľudí.</p>
+
+          <form id="searchForm" class="search-form" role="search">
+            <div>
+              <label class="sr-only" for="q">Pozícia alebo kľúčové slovo</label>
+              <input id="q" type="search" placeholder="Pozícia alebo kľúčové slovo" autocomplete="off">
+            </div>
+            <div>
+              <label class="sr-only" for="place">Mesto alebo región</label>
+              <input id="place" type="search" placeholder="Mesto alebo región" autocomplete="off">
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">Hľadať prácu</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="container">
+        <div class="filters-toggle-wrap">
+          <button type="button" id="filtersToggle" class="btn btn-outline btn-block" aria-expanded="false" aria-controls="filters">Zobraziť filtre</button>
+        </div>
+
+        <div class="layout">
+          <!-- Filtre -->
+          <aside id="filters" class="filters card" aria-label="Filtre ponúk">
+            <form id="filtersForm">
+              <h2 class="filters__title">Filtre</h2>
+
+              <fieldset>
+                <legend>Typ pracovného pomeru</legend>
+                <label class="check"><input type="checkbox" name="type" value="Brigáda"> Brigáda</label>
+                <label class="check"><input type="checkbox" name="type" value="Čiastočný úväzok"> Čiastočný úväzok</label>
+                <label class="check"><input type="checkbox" name="type" value="Plný úväzok"> Plný úväzok</label>
+                <label class="check"><input type="checkbox" name="type" value="Stáž"> Stáž</label>
+              </fieldset>
+
+              <div class="field">
+                <label for="region">Lokalita</label>
+                <select id="region">
+                  <option value="">Všetky lokality</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="salary">Platové rozpätie</label>
+                <input type="range" id="salary" min="0" max="12" step="0.5" value="0">
+                <p class="hint">Minimálna mzda: <strong id="salaryValue">bez obmedzenia</strong></p>
+              </div>
+
+              <div class="field">
+                <label class="check"><input type="checkbox" id="remote"> Možnosť práce z domu</label>
+              </div>
+
+              <fieldset>
+                <legend>Pracovné skúsenosti</legend>
+                <label class="check"><input type="radio" name="level" value="" checked> Všetky</label>
+                <label class="check"><input type="radio" name="level" value="0"> Bez skúseností</label>
+                <label class="check"><input type="radio" name="level" value="1"> Do 1 roka</label>
+                <label class="check"><input type="radio" name="level" value="2"> Viac ako 1 rok</label>
+              </fieldset>
+
+              <button type="button" class="btn btn-outline btn-block js-reset">Resetovať filtre</button>
+            </form>
+          </aside>
+
+          <!-- Výsledky -->
+          <div class="results">
+            <div class="results__head">
+              <p id="resultCount" class="results__count" aria-live="polite"></p>
+              <div class="sort">
+                <label for="sort">Zoradiť podľa</label>
+                <select id="sort">
+                  <option value="relevance">Relevancie</option>
+                  <option value="salary">Platu (od najvyššieho)</option>
+                  <option value="newest">Najnovších ponúk</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="jobList" class="job-list"></div>
+
+            <div id="emptyState" class="card empty" hidden>
+              <div class="empty__icon" aria-hidden="true">🔍</div>
+              <h2>Nenašli sa žiadne ponuky</h2>
+              <p>Skúste zmeniť kľúčové slová, vybrať inú lokalitu alebo znížiť minimálnu mzdu.</p>
+              <button type="button" class="btn btn-primary js-reset">Resetovať filtre</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== STRANA 2: DETAIL PONUKY ===== -->
+    <section id="page-job" class="page container" hidden aria-label="Detail ponuky">
+      <a class="back-link" href="#/">← Späť na ponuky</a>
+
+      <div class="detail-layout">
+        <div class="detail-main">
+          <article id="jobDetail" class="card"></article>
+
+          <section id="applySection" class="card" hidden aria-labelledby="applyTitle">
+            <h2 id="applyTitle">Žiadosť o ponuku</h2>
+            <p id="applyJobName" class="muted"></p>
+            <div class="notice">ℹ️ Ide len o frontendovú ukážku. Vaša žiadosť sa nikam neodosiela a zamestnávateľ ju nedostane.</div>
+            <div id="applyAlert" class="alert" hidden></div>
+
+            <form id="applyForm" novalidate>
+              <div class="field">
+                <label for="applyName">Meno a priezvisko <span class="req" aria-hidden="true">*</span></label>
+                <input id="applyName" type="text" autocomplete="name" aria-required="true" aria-describedby="applyName-error">
+                <p id="applyName-error" class="field-error" hidden></p>
+              </div>
+              <div class="field">
+                <label for="applyEmail">E-mail <span class="req" aria-hidden="true">*</span></label>
+                <input id="applyEmail" type="email" autocomplete="email" aria-required="true" aria-describedby="applyEmail-error">
+                <p id="applyEmail-error" class="field-error" hidden></p>
+              </div>
+              <div class="field">
+                <label for="applyPhone">Telefón</label>
+                <input id="applyPhone" type="tel" autocomplete="tel" placeholder="+421 900 123 456" aria-describedby="applyPhone-error">
+                <p id="applyPhone-error" class="field-error" hidden></p>
+              </div>
+              <div class="field">
+                <label for="applyLetter">Sprievodný list</label>
+                <textarea id="applyLetter" rows="5" placeholder="Prečo vás táto ponuka zaujala?"></textarea>
+              </div>
+              <div class="field">
+                <label for="applyCv">CV (PDF alebo Word, max. 5 MB) <span class="req" aria-hidden="true">*</span></label>
+                <input id="applyCv" type="file" accept=".pdf,.doc,.docx" aria-required="true" aria-describedby="applyCv-error">
+                <p id="applyCv-error" class="field-error" hidden></p>
+              </div>
+              <button type="submit" class="btn btn-primary btn-lg">Odoslať žiadosť</button>
+            </form>
+          </section>
+        </div>
+
+        <aside class="card related" aria-labelledby="relatedTitle">
+          <h2 id="relatedTitle">Podobné ponuky</h2>
+          <ul id="relatedList" class="related-list"></ul>
+          <a class="btn btn-outline btn-block" href="#/">Zobraziť všetky ponuky</a>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ===== STRANA 3: PROFIL ===== -->
+    <section id="page-profile" class="page container" hidden aria-labelledby="profileTitle">
+      <h1 id="profileTitle" class="page-title">Môj profil</h1>
+
+      <div class="profile-layout">
+        <aside class="card profile-card" aria-label="Profil študenta">
+          <div id="profileView"></div>
+          <button type="button" id="editProfileBtn" class="btn btn-primary btn-block" aria-expanded="false" aria-controls="profileEdit">Upraviť profil</button>
+        </aside>
+
+        <div class="profile-main">
+          <section id="profileEdit" class="card" hidden aria-labelledby="editTitle">
+            <h2 id="editTitle">Upraviť profil</h2>
+            <form id="profileForm" novalidate>
+              <div class="field">
+                <label for="pName">Meno a priezvisko <span class="req" aria-hidden="true">*</span></label>
+                <input id="pName" type="text" autocomplete="name" aria-describedby="pName-error">
+                <p id="pName-error" class="field-error" hidden></p>
+              </div>
+              <div class="field">
+                <label for="pEmail">E-mail <span class="req" aria-hidden="true">*</span></label>
+                <input id="pEmail" type="email" autocomplete="email" aria-describedby="pEmail-error">
+                <p id="pEmail-error" class="field-error" hidden></p>
+              </div>
+              <div class="form-row">
+                <div class="field">
+                  <label for="pUni">Univerzita</label>
+                  <input id="pUni" type="text">
+                </div>
+                <div class="field">
+                  <label for="pField">Študijný odbor</label>
+                  <input id="pField" type="text">
+                </div>
+              </div>
+              <div class="field">
+                <label for="pBio">O mne</label>
+                <textarea id="pBio" rows="4"></textarea>
+              </div>
+              <div class="field">
+                <label for="pSkills">Zručnosti (oddeľte čiarkou)</label>
+                <input id="pSkills" type="text" placeholder="napr. JavaScript, Excel, Angličtina B2">
+              </div>
+              <div class="field">
+                <label for="pExp">Pracovné skúsenosti (každá na nový riadok)</label>
+                <textarea id="pExp" rows="4"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Uložiť zmeny</button>
+                <button type="button" id="cancelEdit" class="btn btn-outline">Zrušiť</button>
+              </div>
+            </form>
+          </section>
+
+          <section id="savedSection" class="card" aria-labelledby="savedTitle">
+            <h2 id="savedTitle">Uložené ponuky</h2>
+            <div id="savedList"></div>
+          </section>
+
+          <section class="card" aria-labelledby="appsTitle">
+            <h2 id="appsTitle">Odoslané žiadosti</h2>
+            <div id="appsList"></div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== STRANA 4: REGISTRÁCIA ===== -->
+    <section id="page-register" class="page container" hidden aria-labelledby="registerTitle">
+      <div class="auth-wrap">
+        <div class="card auth-card">
+          <h1 id="registerTitle">Registrácia</h1>
+          <p class="muted">Vytvorte si účet a ukladajte si zaujímavé ponuky.</p>
+          <div class="notice">ℹ️ Frontendová ukážka: účet sa nevytvára a heslo sa nikam neukladá ani neodosiela.</div>
+          <div id="registerAlert" class="alert" hidden></div>
+
+          <form id="registerForm" novalidate>
+            <div class="field">
+              <label for="regEmail">E-mail</label>
+              <input id="regEmail" type="email" autocomplete="email" aria-describedby="regEmail-error">
+              <p id="regEmail-error" class="field-error" hidden></p>
+            </div>
+            <div class="field">
+              <label for="regPassword">Heslo</label>
+              <input id="regPassword" type="password" autocomplete="new-password" aria-describedby="regPassword-error">
+              <p id="regPassword-error" class="field-error" hidden></p>
+            </div>
+            <div class="field">
+              <label for="regPassword2">Zopakovať heslo</label>
+              <input id="regPassword2" type="password" autocomplete="new-password" aria-describedby="regPassword2-error">
+              <p id="regPassword2-error" class="field-error" hidden></p>
+            </div>
+            <div class="field">
+              <label class="check"><input type="checkbox" id="regTerms" aria-describedby="regTerms-error"> Súhlasím s podmienkami používania</label>
+              <p id="regTerms-error" class="field-error" hidden></p>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block">Vytvoriť účet</button>
+          </form>
+
+          <p class="auth-switch"><a href="#/login">Už máte účet? Prihláste sa</a></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PRIHLÁSENIE ===== -->
+    <section id="page-login" class="page container" hidden aria-labelledby="loginTitle">
+      <div class="auth-wrap">
+        <div class="card auth-card">
+          <h1 id="loginTitle">Prihlásiť sa</h1>
+          <p class="muted">Vitajte späť! Zadajte svoje prihlasovacie údaje.</p>
+          <div class="notice">ℹ️ Frontendová ukážka: skutočné prihlasovanie nie je implementované a údaje sa nikam neodosielajú.</div>
+          <div id="loginAlert" class="alert" hidden></div>
+
+          <form id="loginForm" novalidate>
+            <div class="field">
+              <label for="loginEmail">E-mail</label>
+              <input id="loginEmail" type="email" autocomplete="email" aria-describedby="loginEmail-error">
+              <p id="loginEmail-error" class="field-error" hidden></p>
+            </div>
+            <div class="field">
+              <label for="loginPassword">Heslo</label>
+              <input id="loginPassword" type="password" autocomplete="current-password" aria-describedby="loginPassword-error">
+              <p id="loginPassword-error" class="field-error" hidden></p>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg btn-block">Prihlásiť sa</button>
+          </form>
+
+          <p class="auth-switch"><a href="#/register">Nemáte účet? Zaregistrujte sa</a></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p><strong>JobStudent.sk</strong> – práca a stáže pre študentov</p>
+      <p class="footer-note">Ukážkový frontendový projekt. Ponuky sú vymyslené a žiadne údaje sa neodosielajú na server.</p>
+    </div>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
