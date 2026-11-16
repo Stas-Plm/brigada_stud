@@ -120,7 +120,7 @@
               </div>
             </div>
 
-            <div id="jobList" class="job-list"></div>
+            <div class="notice"><p id="feedStatus" aria-live="polite">Načítavam ponuky…</p><a href="https://www.profesia.sk/praca/na-dohodu-brigady/" target="_blank" rel="noopener noreferrer">Aktuálne brigády na Profesia.sk ↗</a></div><div id="jobList" class="job-list"></div>
 
             <div id="emptyState" class="card empty" hidden>
               <div class="empty__icon" aria-hidden="true">🔍</div>
@@ -257,10 +257,10 @@
         <div class="card auth-card">
           <h1 id="registerTitle">Registrácia</h1>
           <p class="muted">Vytvorte si účet a ukladajte si zaujímavé ponuky.</p>
-          <div class="notice">ℹ️ Frontendová ukážka: účet sa nevytvára a heslo sa nikam neukladá ani neodosiela.</div>
+          <div class="notice">Lokálny študentský prototyp: účet je uložený iba v tomto prehliadači. Nepoužívajte svoje skutočné heslo z iných služieb.</div>
           <div id="registerAlert" class="alert" hidden></div>
 
-          <form id="registerForm" novalidate>
+          <form id="registerForm" novalidate><div class="field"><label for="regName">Meno a priezvisko</label><input id="regName" type="text" autocomplete="name"></div>
             <div class="field">
               <label for="regEmail">E-mail</label>
               <input id="regEmail" type="email" autocomplete="email" aria-describedby="regEmail-error">
@@ -294,7 +294,7 @@
         <div class="card auth-card">
           <h1 id="loginTitle">Prihlásiť sa</h1>
           <p class="muted">Vitajte späť! Zadajte svoje prihlasovacie údaje.</p>
-          <div class="notice">ℹ️ Frontendová ukážka: skutočné prihlasovanie nie je implementované a údaje sa nikam neodosielajú.</div>
+          <div class="notice">Prihlásenie funguje iba v prehliadači, v ktorom ste si vytvorili účet.</div>
           <div id="loginAlert" class="alert" hidden></div>
 
           <form id="loginForm" novalidate>
@@ -320,7 +320,7 @@
   <footer class="site-footer">
     <div class="container">
       <p><strong>JobStudent.sk</strong> – práca a stáže pre študentov</p>
-      <p class="footer-note">Ukážkový frontendový projekt. Ponuky sú vymyslené a žiadne údaje sa neodosielajú na server.</p>
+      <p class="footer-note">Študentský projekt. Zdroj ponúk: Profesia.sk. Účty sú lokálne.</p>
     </div>
   </footer>
 
