@@ -1,32 +1,49 @@
-import os, json, re, hashlib, urllib.request, xml.etree.ElementTree as ET, unicodedata
+import os, json, re, hashlib, unicodedata, urllib.request, urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
-from urllib.parse import urlparse
-from email.utils import parsedate_to_datetime
+from urllib.parse import urlparse, quote
+from html import unescape
 
-def norm(s): return ''.join(c for c in unicodedata.normalize('NFD',s.lower()) if not unicodedata.combining(c))
-def val(item,*names):
-    for name in names:
-        for child in item:
-            if child.tag.split('}')[-1].lower()==name and child.text: return child.text.strip()
-    return ''
-url=os.environ.get('PROFESIA_FEED_URL','')
-if not url: raise SystemExit('Nastavte PROFESIA_FEED_URL na schválený partnerský RSS/XML export.')
-with urllib.request.urlopen(url,timeout=30) as response: root=ET.fromstring(response.read())
-items=[x for x in root.iter() if x.tag.split('}')[-1].lower() in ('item','job','offer','entry')]
-if not items: raise SystemExit('Export nemá rozpoznané položky; overte formát s Profesiou.')
-jobs={}
-for item in items:
-    title=val(item,'title','name'); link=val(item,'link','url'); u=urlparse(link)
-    if u.scheme!='https' or u.hostname not in ('www.profesia.sk','profesia.sk') or not u.path.startswith('/praca/'): continue
-    t=norm(title)
-    if not re.search(r'student|brigad|staz|internship|trainee',t): continue
-    id=int(hashlib.sha256(link.encode()).hexdigest()[:12],16)
-    posted=val(item,'pubdate','published','date'); date=None
-    try: date=parsedate_to_datetime(posted).isoformat()
-    except Exception:
-        try: date=datetime.fromisoformat(posted.replace('Z','+00:00')).isoformat()
-        except ValueError: pass
-    wage=val(item,'salary','wage'); m=re.search(r'(\d+(?:[,.]\d+)?)\s*(?:EUR|€)\s*/\s*(?:hod|h\b)',wage,re.I)
-    jobs[id]={'id':id,'title':title,'url':link,'company':val(item,'company','employer') or 'Zamestnávateľ na Profesii','location':val(item,'location','city','region') or 'Lokalita v inzeráte','salary':float(m[1].replace(',','.')) if m else None,'type':'Stáž' if re.search(r'staz|internship|trainee',t) else 'Brigáda' if 'brigad' in t else 'Pre študentov','remote':bool(re.search(r'home office|praca z domu|remote',norm(title+' '+val(item,'location')))),'level':None,'posted':date}
-Path('jobs.json').write_text(json.dumps({'updated':datetime.now(timezone.utc).isoformat(),'jobs':list(jobs.values())},ensure_ascii=False,indent=2),encoding='utf-8')
+def clean(s):
+    return ' '.join(unescape(re.sub(r'<[^>]*>', ' ', str(s or ''))).split())
+def norm(s):
+    return ''.join(c for c in unicodedata.normalize('NFD', s.lower()) if not unicodedata.combining(c))
+def convert(j):
+    title, snippet, kind = map(clean, (j.get('title'), j.get('snippet'), j.get('type')))
+    t, k = norm(title), norm(kind)
+    if re.search(r'plny uvazok|full.time', k): return None
+    if re.search(r'staz|internship|intern\b|trainee', t+' '+k): typ='Stáž'
+    elif re.search(r'brigad|na dohodu', t+' '+k): typ='Brigáda'
+    elif re.search(r'ciastocny|skrat(en|eny)|part.time', k+' '+t): typ='Čiastočný úväzok'
+    elif re.search(r'student|popri studiu', t) or re.search(r'vhodn\w* pre student|popri studiu|student\w* vysok', norm(snippet)): typ='Pre študentov'
+    else: return None
+    url=str(j.get('link') or ''); u=urlparse(url)
+    if not title or u.scheme!='https' or not u.hostname or not (u.hostname=='jooble.org' or u.hostname.endswith('.jooble.org')): return None
+    wage=clean(j.get('salary')); m=re.search(r'(\d+(?:[,.]\d+)?)\s*(?:EUR|€)?\s*(?:/|za|per)\s*(?:hod|hour|h\b)',wage,re.I)
+    posted=None
+    try: posted=datetime.fromisoformat(str(j.get('updated')).replace('Z','+00:00')).isoformat()
+    except ValueError: pass
+    ident=str(j.get('id') or url)
+    return dict(id=int(hashlib.sha256(ident.encode()).hexdigest()[:12],16),title=title,url=url,company=clean(j.get('company')) or 'Zamestnávateľ v inzeráte',location=clean(j.get('location')) or 'Lokalita v inzeráte',salary=float(m[1].replace(',','.')) if m else None,salaryText=wage,type=typ,remote=bool(re.search(r'home office|praca z domu|remote',t+' '+k)),level=None,posted=posted,summary=snippet or 'Podrobnosti nájdete v pôvodnom inzeráte.',source=clean(j.get('source')))
+
+def main():
+    key=os.environ.get('JOOBLE_API_KEY','').strip()
+    if not key: raise SystemExit('Chýba JOOBLE_API_KEY. Nastavte GitHub Actions secret.')
+    jobs={}
+    for keyword in ('brigáda','študent','stáž','skrátený úväzok','čiastočný úväzok','internship'):
+        for page in (1,2):
+            payload=dict(keywords=keyword,location='Slovensko',page=page,ResultOnPage=50)
+            req=urllib.request.Request('https://sk.jooble.org/api/'+quote(key,safe=''),data=json.dumps(payload).encode(),headers={'Content-Type':'application/json','Accept':'application/json'},method='POST')
+            try:
+                with urllib.request.urlopen(req,timeout=35) as r: data=json.load(r)
+            except urllib.error.HTTPError as e: raise SystemExit(f'Jooble API: HTTP {e.code}; pôvodné ponuky zachované.') from None
+            except Exception: raise SystemExit('Jooble API nedostupné; pôvodné ponuky zachované.') from None
+            if not isinstance(data.get('jobs'),list): raise SystemExit('Neočakávaná odpoveď API.')
+            for item in data['jobs']:
+                job=convert(item)
+                if job: jobs[job['id']]=job
+            if not data['jobs'] or data.get('totalCount',100)<=page*50: break
+    out=Path(__file__).with_name('jobs.json'); tmp=out.with_suffix('.tmp')
+    tmp.write_text(json.dumps(dict(updated=datetime.now(timezone.utc).isoformat(),jobs=list(jobs.values())),ensure_ascii=False,indent=2),encoding='utf-8'); tmp.replace(out)
+    print(f'Importované ponuky: {len(jobs)}')
+if __name__=='__main__': main()

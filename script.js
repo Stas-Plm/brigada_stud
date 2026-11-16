@@ -161,7 +161,7 @@ function jobCardHTML(job) {
         <p class="job-card__company">${esc(job.company)}</p>
         <ul class="meta">
           <li>📍 ${esc(job.location)}</li>
-          <li>💶 ${fmtSalary(job.salary)}</li>
+          <li>💶 ${esc(job.salaryText || fmtSalary(job.salary))}</li>
           <li><span class="badge">${esc(job.type)}</span></li>
           ${job.remote ? '<li><span class="badge badge-green">Práca z domu</span></li>' : ''}
         </ul>
@@ -259,7 +259,7 @@ function renderDetail(id) {
 
   const related = job ? relatedJobs(job) : JOBS.slice(0, 4);
   $('#relatedList').innerHTML = related.map(j => `
-    <li><a href="#/job/${j.id}"><strong>${esc(j.title)}</strong><span>${esc(j.company)} · ${fmtSalary(j.salary)}</span></a></li>`).join('');
+    <li><a href="#/job/${j.id}"><strong>${esc(j.title)}</strong><span>${esc(j.company)} · ${esc(j.salaryText || fmtSalary(j.salary))}</span></a></li>`).join('');
 
   if (!job) {
     $('#jobDetail').innerHTML = `
@@ -281,17 +281,15 @@ function renderDetail(id) {
     </div>
     <ul class="meta meta-lg">
       <li>📍 ${esc(job.location)}</li>
-      <li>💶 ${fmtSalary(job.salary)}</li>
+      <li>💶 ${esc(job.salaryText || fmtSalary(job.salary))}</li>
       <li><span class="badge">${esc(job.type)}</span></li>
       ${job.remote ? '<li><span class="badge badge-green">Možnosť práce z domu</span></li>' : ''}
-      <li>🗓️ Pridané: ${fmtDate(job.posted)} </li>
+      <li>🗓️ Aktualizované: ${fmtDate(job.posted)} </li>
     </ul>
-    <a class="btn btn-primary btn-lg" href="${esc(job.url)}" target="_blank" rel="noopener noreferrer">Reagovať na Profesia.sk</a>
+    <a class="btn btn-primary btn-lg" href="${esc(job.url)}" target="_blank" rel="noopener noreferrer">Otvoriť ponuku na Jooble</a>
     <h2>Popis pozície</h2>
     <p>${esc(job.description)}</p>
-    <h2>Hlavné povinnosti</h2>${list(job.responsibilities)}
-    <h2>Požiadavky</h2>${list(job.requirements)}
-    <h2>Benefity</h2>${list(job.benefits)}`;
+    <p class="muted">Úplné požiadavky a podmienky sú na Jooble.</p>`;
   return job;
 }
 
@@ -417,7 +415,7 @@ function renderSavedJobs() {
       <div class="logo logo-sm" style="--logo:${job.color}" aria-hidden="true">${esc(initials(job.company))}</div>
       <div>
         <h3>${esc(job.title)}</h3>
-        <p>${esc(job.company)} · ${esc(job.location)} · ${fmtSalary(job.salary)}</p>
+        <p>${esc(job.company)} · ${esc(job.location)} · ${esc(job.salaryText || fmtSalary(job.salary))}</p>
       </div>
       <div class="mini-job__actions">
         <a class="btn btn-outline" href="#/job/${job.id}">Detail ponuky</a>
@@ -603,10 +601,10 @@ async function loadOffers() {
   try {
     const r = await fetch('./jobs.json', {cache:'no-store'}); if(!r.ok) throw Error();
     const data = await r.json();
-    const allowed = /^(https:\/\/)(www\.)?profesia\.sk\/praca\//i;
-    JOBS.splice(0,JOBS.length,...data.jobs.filter(j=>allowed.test(j.url)&&/student|brigad|staz|internship|trainee/.test(norm(j.title))).map(j=>({...j,color:'#1d4ed8',keywords:[],summary:'Zdroj: Profesia.sk',description:'Podrobné informácie nájdete v pôvodnom inzeráte.',responsibilities:[],requirements:[],benefits:[],daysAgo:j.posted?Math.max(0,Math.floor((Date.now()-Date.parse(j.posted))/DAY_MS)):9999})));
+    const allowed = /^https:\/\/(?:[a-z0-9-]+\.)*jooble\.org(?:\/|$)/i;
+    JOBS.splice(0,JOBS.length,...data.jobs.filter(j=>allowed.test(j.url)&&['Brigáda','Stáž','Čiastočný úväzok','Pre študentov'].includes(j.type)).map(j=>({...j,color:'#1d4ed8',keywords:[],summary:j.summary,description:j.summary,daysAgo:j.posted?Math.max(0,Math.floor((Date.now()-Date.parse(j.posted))/DAY_MS)):9999})));
     $('#region').innerHTML='<option value="">Všetky lokality</option>'; populateRegions(); renderJobs(); route();
-    status.textContent=JOBS.length ? 'Zdroj: Profesia.sk • posledný import: '+fmtDate(data.updated) : 'Import zatiaľ neobsahuje študentské ponuky. Aktuálne ponuky nájdete priamo na Profesii.';
-  } catch { status.textContent='Import nie je dostupný. Aktuálne ponuky nájdete priamo na Profesii.'; }
+    status.textContent=data.updated ? 'Zdroj: Jooble • posledný import: '+new Date(data.updated).toLocaleString('sk-SK')+(JOBS.length?'':' • Bez vhodných ponúk') : 'Čaká sa na prvý import z Jooble. Nastavte API kľúč a spustite GitHub Actions.';
+  } catch { status.textContent='Import nie je dostupný. Aktuálne ponuky nájdete na Jooble.'; }
 }
 loadOffers();

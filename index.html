@@ -73,7 +73,7 @@
                 <legend>Typ pracovného pomeru</legend>
                 <label class="check"><input type="checkbox" name="type" value="Brigáda"> Brigáda</label>
                 <label class="check"><input type="checkbox" name="type" value="Čiastočný úväzok"> Čiastočný úväzok</label>
-                <label class="check"><input type="checkbox" name="type" value="Plný úväzok"> Plný úväzok</label>
+                <label class="check"><input type="checkbox" name="type" value="Pre študentov"> Pre študentov</label>
                 <label class="check"><input type="checkbox" name="type" value="Stáž"> Stáž</label>
               </fieldset>
 
@@ -85,7 +85,7 @@
               </div>
 
               <div class="field">
-                <label for="salary">Platové rozpätie</label>
+                <label for="salary">Minimálna hodinová mzda (ak je známa)</label>
                 <input type="range" id="salary" min="0" max="12" step="0.5" value="0">
                 <p class="hint">Minimálna mzda: <strong id="salaryValue">bez obmedzenia</strong></p>
               </div>
@@ -97,9 +97,7 @@
               <fieldset>
                 <legend>Pracovné skúsenosti</legend>
                 <label class="check"><input type="radio" name="level" value="" checked> Všetky</label>
-                <label class="check"><input type="radio" name="level" value="0"> Bez skúseností</label>
-                <label class="check"><input type="radio" name="level" value="1"> Do 1 roka</label>
-                <label class="check"><input type="radio" name="level" value="2"> Viac ako 1 rok</label>
+                <p class="hint">Požiadavky na skúsenosti overte v pôvodnom inzeráte.</p>
               </fieldset>
 
               <button type="button" class="btn btn-outline btn-block js-reset">Resetovať filtre</button>
@@ -120,7 +118,7 @@
               </div>
             </div>
 
-            <div class="notice"><p id="feedStatus" aria-live="polite">Načítavam ponuky…</p><a href="https://www.profesia.sk/praca/na-dohodu-brigady/" target="_blank" rel="noopener noreferrer">Aktuálne brigády na Profesia.sk ↗</a></div><div id="jobList" class="job-list"></div>
+            <div class="notice"><p id="feedStatus" aria-live="polite">Načítavam ponuky…</p><a href="https://sk.jooble.org/" target="_blank" rel="noopener noreferrer">Aktuálne ponuky na Jooble ↗</a></div><div id="jobList" class="job-list"></div>
 
             <div id="emptyState" class="card empty" hidden>
               <div class="empty__icon" aria-hidden="true">🔍</div>
@@ -320,7 +318,7 @@
   <footer class="site-footer">
     <div class="container">
       <p><strong>JobStudent.sk</strong> – práca a stáže pre študentov</p>
-      <p class="footer-note">Študentský projekt. Zdroj ponúk: Profesia.sk. Účty sú lokálne.</p>
+      <p class="footer-note">Študentský projekt. Zdroj ponúk: Jooble. Účty sú lokálne.</p>
     </div>
   </footer>
 
